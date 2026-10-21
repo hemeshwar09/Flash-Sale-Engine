@@ -1,0 +1,23 @@
+# docker compose up --build --scale api=3
+# Exactly ONE worker (queue consumer + waiting-room admitter); N stateless API replicas.
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 3s, retries: 10 }
+  worker:
+    build: .
+    environment: { ROLE: worker, REDIS_URL: "redis://redis:6379", INITIAL_STOCK: "500", ADMIT_PER_TICK: "200" }
+    depends_on: { redis: { condition: service_healthy } }
+  api:
+    build: .
+    environment:
+      ROLE: api
+      REDIS_URL: redis://redis:6379
+      STRATEGY: lua
+      WAITING_ROOM: "on"
+      PASS_SECRET: change-me
+      ADMIN_TOKEN: change-me-too
+      ALLOW_STRATEGY_OVERRIDE: "true"   # set to false in production
+    depends_on: { redis: { condition: service_healthy }, worker: { condition: service_started } }
+    ports: ["3000-3010:3000"]

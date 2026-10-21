@@ -1,0 +1,12 @@
+{
+  "name": "flash-sale-engine",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Prime-Day style flash-sale engine: 4 inventory strategies, virtual waiting room, rate limiting, load test",
+  "scripts": {
+    "start": "node src/server.js",
+    "loadtest": "node loadtest/run.js"
+  },
+  "dependencies": { "ioredis": "^5.4.1" },
+  "engines": { "node": ">=20" }
+}

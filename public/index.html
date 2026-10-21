@@ -1,0 +1,22 @@
+<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>Flash Sale</title>
+<style>body{font:16px system-ui;max-width:480px;margin:40px auto;padding:0 16px}
+.card{border:1px solid #8884;border-radius:12px;padding:20px;margin:12px 0}
+button{font:inherit;padding:10px 18px;border-radius:8px;border:0;background:#f90;cursor:pointer}
+button:disabled{opacity:.5}.big{font-size:40px;font-weight:700}</style>
+<h2>⚡ Prime Day Flash Sale</h2>
+<div class=card><div class=big id=stock>–</div><div>units left · <span id=sold>0</span> sold</div></div>
+<div class=card><button id=buy>Join queue &amp; buy</button><p id=msg>Ready.</p></div>
+<script>
+const uid=localStorage.uid||(localStorage.uid='web-'+Math.random().toString(36).slice(2,10));
+const $=i=>document.getElementById(i), sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const post=(p,b,h={})=>fetch(p,{method:'POST',headers:{'content-type':'application/json',...h},body:JSON.stringify(b)}).then(async r=>({s:r.status,j:await r.json()}));
+async function refresh(){const j=await (await fetch('/api/stats')).json();$('stock').textContent=j.stock;$('sold').textContent=j.sold}
+setInterval(refresh,1000);refresh();
+$('buy').onclick=async()=>{$('buy').disabled=true;let q;
+ for(;;){q=(await post('/api/queue/join',{userId:uid})).j;
+  if(q.admitted)break;$('msg').textContent='In waiting room… position '+q.position;await sleep(1000)}
+ const r=await post('/api/purchase',{userId:uid},{'x-pass':q.pass});
+ $('msg').textContent=({201:'🎉 Order '+r.j.orderId,200:'You already ordered: '+r.j.orderId,409:'Sold out 😢',429:'Too fast, slow down',503:'Busy, try again'})[r.s]||'Error';
+ $('buy').disabled=false;refresh()}
+</script>
